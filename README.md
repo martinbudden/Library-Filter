@@ -1,0 +1,95 @@
+![license](https://img.shields.io/badge/license-MIT-green) ![open source](https://badgen.net/badge/open/source/blue?icon=github)
+
+# Filters Library
+
+This library contains a collection of filter classes. They have been developed for use in a Self Balancing Robot and have been used to:
+
+1. Filter gyro and accelerometer output for use in the Attitude and Heading Reference System (AHRS).
+2. Filter motor encoder values for use in the motor controller.
+3. Filter derivative terms in a PID controller.
+4. Filter motor power input values to smooth the motor speed.
+
+## Class Diagram
+
+The filters are somewhat statically (build-time) polymorphic, and somewhat dynamically (run-time) polymorphic.<br>
+This is deliberate.<br>
+
+The filters have functions that have names and signatures in common, but the only virtual function is `filterVirtual`.
+
+The filter function may called directly by calling `filter`, or indirectly (via the vtable) using `filterVirtual`.
+
+This means the the filters are somewhat interchangeable at build time, depending on which functions are used.
+
+```mermaid
+classDiagram
+    class FilterNull {
+        init(float k)
+        reset()
+        setToPassthrough()
+        setCutoffFrequency(float cutoffFrequency, float dT)
+        setCutoffFrequencyAndReset(float cutoffFrequency, float dT)
+        filter(float input) float
+        filter(float input, float dT) float
+    }
+```
+
+```mermaid
+classDiagram
+    class FilterMovingAverage~N~ {
+        reset()
+        filter(float input) float
+        filter(float input, float dT) float
+    }
+```
+
+```mermaid
+classDiagram
+    class PowerTransferFilter1 {
+        init(float k)
+        reset()
+        setToPassthrough()
+        setCutoffFrequency(float cutoffFrequency, float dT)
+        setCutoffFrequencyAndReset(float cutoffFrequency, float dT)
+        filter(float input) float
+        gainFromDelay(float delay, float dT) float $
+        gain(float cutoffFrequency, float dT) float $
+    }
+
+    class PowerTransferFilter2 {
+        init(float k)
+        reset()
+        setToPassthrough()
+        setCutoffFrequency(float cutoffFrequency, float dT)
+        setCutoffFrequencyAndReset(float cutoffFrequency, float dT)
+        filter(float input) float
+        gainFromDelay(float delay, float dT) float $
+        gain(float cutoffFrequency, float dT) float $
+    }
+
+    class PowerTransferFilter3 {
+        init(float k)
+        reset()
+        setToPassthrough()
+        setCutoffFrequency(float cutoffFrequency, float dT)
+        setCutoffFrequencyAndReset(float cutoffFrequency, float dT)
+        filter(float input) float
+        gainFromDelay(float delay, float dT) float $
+        gain(float cutoffFrequency, float dT) float $
+    }
+```
+
+```mermaid
+classDiagram
+    class BiquadFilter {
+        setWeight(float weight)
+        setParameters(float a1, float a2, float b0, float b1, float b2, float weight)
+        setParameters(float a1, float a2, float b0, float b1, float b2)
+        setParameters(const BiquadFilter& other)
+
+        reset()
+        setToPassthrough()
+
+        filter(float input) float
+        filterWeighted(float input) float
+    }
+```

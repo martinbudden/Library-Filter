@@ -1,0 +1,18 @@
+{
+    "name": "Filter",
+    "description": "Filters library, including biquad, moving average, low-pass, and notch filters",
+    "keywords": "filter biquad moving average exponential low-pass",
+    "authors": {
+        "name": "Martin Budden",
+        "url": "https://github.com/martinbudden"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/martinbudden/Library-Filter.git"
+    },
+    "license": "MIT",
+    "version": "0.0.1",
+    "frameworks": "*",
+    "platforms": "*",
+    "headers": [ "Filters.h", "FilterTemplates.h", "CircularBuffer.h", "RollingBuffer.h" ]
+}
