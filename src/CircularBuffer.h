@@ -16,21 +16,21 @@ public:
 private:
     enum { CAPACITY = C };
 public:
-    inline size_t size() const { return _size; }
-    inline bool isEmpty() const { return _size == 0; }
-    inline bool isFull() const { return _size >= capacity(); }
+    size_t size() const { return _size; }
+    bool isEmpty() const { return _size == 0; }
+    bool isFull() const { return _size >= capacity(); }
     bool pushBack(const T& value);
     bool popFront(T& value);
-    inline const T& operator[](size_t index) const {
+    const T& operator[](size_t index) const {
         size_t pos = _begin + index;
         if (pos > capacity()) {
             pos -= capacity() + 1;
         }
         return _buffer[pos];
     }
-    inline const T& front() const { return _buffer[_begin]; }
-    inline const T& back() const { return _end > 0 ? _buffer[_end - 1] : _buffer[CAPACITY]; }
-    inline void copy(std::array<T, C>& dest) const {
+    const T& front() const { return _buffer[_begin]; }
+    const T& back() const { return _end > 0 ? _buffer[_end - 1] : _buffer[CAPACITY]; }
+    void copy(std::array<T, C>& dest) const {
         if (_end >= _begin) {
             memcpy(&dest[0], &_buffer[_begin], (_end - _begin) * sizeof(T));
         } else {
@@ -38,18 +38,18 @@ public:
             memcpy(&dest[CAPACITY + 1 - _begin], &_buffer[0], _end * sizeof(T));
         }
     }
-    inline size_t getBegin() { return _begin; }
-    inline size_t getEnd() { return _end; }
+    size_t getBegin() { return _begin; }
+    size_t getEnd() { return _end; }
     
-    inline size_t capacity() const { return CAPACITY; }
+    size_t capacity() const { return CAPACITY; }
 
     class Iterator {
     public:
         Iterator(const CircularBuffer& rb, size_t pos) : _cb(rb), _pos(pos) {}
-        inline const T& operator*() const { return _cb._buffer[_pos]; }
-        inline const T* operator->() const { return &_cb._buffer[_pos]; }
-        inline Iterator& operator++() { ++_pos; if (_pos > _cb._size) _pos = 0; return *this; }
-        inline bool operator!=(const Iterator& other) const { return _pos != other._pos || &_cb != &other._cb; }
+        const T& operator*() const { return _cb._buffer[_pos]; }
+        const T* operator->() const { return &_cb._buffer[_pos]; }
+        Iterator& operator++() { ++_pos; if (_pos > _cb._size) _pos = 0; return *this; }
+        bool operator!=(const Iterator& other) const { return _pos != other._pos || &_cb != &other._cb; }
         size_t pos() const { return _pos; }
     private:
         const CircularBuffer& _cb;
@@ -65,7 +65,7 @@ private:
 };
 
 template <typename T, size_t C>
-bool CircularBuffer<T, C>::pushBack(const T& value)
+inline bool CircularBuffer<T, C>::pushBack(const T& value)
 {
     if (isFull()) {
         return false;
@@ -81,7 +81,7 @@ bool CircularBuffer<T, C>::pushBack(const T& value)
 }
 
 template <typename T, size_t C>
-bool CircularBuffer<T, C>::popFront(T& value)
+inline bool CircularBuffer<T, C>::popFront(T& value)
 {
     if (isEmpty()) {
         return false;
