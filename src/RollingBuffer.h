@@ -38,7 +38,7 @@ public:
     }
     size_t getBegin() { return _begin; }
     size_t getEnd() { return _end; }
-    
+
     size_t capacity() const { return CAPACITY; }
 
     class Iterator {
