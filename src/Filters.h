@@ -49,7 +49,7 @@ public:
     void setToPassthrough() { _k = 1.0F; reset(); }
 
     float filter(float input) {
-        _state += _k*(input - _state); // equivalent to _state = _k*input + (1.0F - _k)*_state;
+        _state = _state + (input - _state)*_k; // equivalent to _state = _k*input + (1.0F - _k)*_state;
         return _state;
     }
     virtual float filterVirtual(float input) override { return filter(input); }
@@ -90,8 +90,8 @@ public:
     void setToPassthrough() { _k = 1.0F; }
 
     float filter(float input) {
-        _state[1] += _k*(input - _state[1]);
-        _state[0] += _k*(_state[1] - _state[0]);
+        _state[1] = _state[1] + (input - _state[1])*_k;
+        _state[0] = _state[0] + (_state[1] - _state[0])*_k;
         return _state[0];
     }
     virtual float filterVirtual(float input) override { return filter(input); }
@@ -129,9 +129,9 @@ public:
     void setToPassthrough() { _k = 1.0F; reset(); }
 
     float filter(float input) {
-        _state[2] += _k*(input - _state[2]);
-        _state[1] += _k*(_state[2] - _state[1]);
-        _state[0] += _k*(_state[1] - _state[0]);
+        _state[2] = _state[2] + (input - _state[2])*_k;
+        _state[1] = _state[1] + (_state[2] - _state[1])*_k;
+        _state[0] = _state[0] + (_state[1] - _state[0])*_k;
         return _state[0];
     }
     virtual float filterVirtual(float input) override { return filter(input); }
@@ -215,7 +215,7 @@ public:
     float filterWeighted(float input) {
         const float output = filter(input);
         // weight of 1.0 gives just output, weight of 0.0 gives just input
-        return _weight*(output - input) + input;
+        return (output - input)*_weight + input;
     }
 
     void initLowPass(float frequencyHz, float loopTimeSeconds, float Q) {
@@ -369,16 +369,16 @@ protected:
 template <size_t N>
 inline float FilterMovingAverage<N>::filter(float input)
 {
-    _sum += input;
+    _sum = _sum + input;
     if (_count < N) {
         _samples[_index++] = input;
         ++_count;
-        return _sum/static_cast<float>(_count);
+        return _sum*(1.0F/static_cast<float>(_count));
     }
     if (_index == N) {
         _index = 0;
     }
-    _sum -= _samples[_index];
+    _sum = _sum - _samples[_index];
     _samples[_index++] = input;
 
     constexpr float nReciprocal = 1.0F/N;

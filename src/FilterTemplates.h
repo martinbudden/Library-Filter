@@ -55,7 +55,7 @@ public:
     void setToPassthrough() { _k = 1.0F; reset(); }
 
     T filter(const T& input) {
-        _state += _k*(input - _state); // equivalent to _state = _k*input + (1.0F - _k)*_state;
+        _state = _state + (input - _state)*_k; // equivalent to _state = _k*input + (1.0F - _k)*_state;
         return _state;
     }
     virtual T filterVirtual(const T& input) override { return filter(input); }
@@ -97,8 +97,8 @@ public:
     void setToPassthrough() { _k = 1.0F; }
 
     T filter(const T& input) {
-        _state[1] += _k*(input - _state[1]);
-        _state[0] += _k*(_state[1] - _state[0]);
+        _state[1] = _state[1] + (input - _state[1])*_k;
+        _state[0] = _state[0] + (_state[1] - _state[0])*_k;
         return _state[0];
     }
     virtual T filterVirtual(const T& input) override { return filter(input); }
@@ -137,9 +137,9 @@ public:
     void setToPassthrough() { _k = 1.0F; reset(); }
 
     T filter(const T& input) {
-        _state[2] += _k*(input - _state[2]);
-        _state[1] += _k*(_state[2] - _state[1]);
-        _state[0] += _k*(_state[1] - _state[0]);
+        _state[2] = _state[2] + (input - _state[2])*_k;
+        _state[1] = _state[1] + (_state[2] - _state[1])*_k;
+        _state[0] = _state[0] + (_state[1] - _state[0])*_k;
         return _state[0];
     }
     virtual T filterVirtual(const T& input) override { return filter(input); }
@@ -212,7 +212,7 @@ public:
     void setToPassthrough() { _b0 = 1.0F; _b1 = 0.0F; _b2 = 0.0F; _a1 = 0.0F; _a2 = 0.0F;  _weight = 1.0F; reset(); }
 
     T filter(const T& input) {
-        const T output = _b0*input + _b1*_state.x1 + _b2*_state.x2 - _a1*_state.y1 - _a2*_state.y2;
+        const T output = input*_b0 + _state.x1*_b1 + _state.x2*_b2 - _state.y1*_a1 - _state.y2*_a2;
         _state.x2 = _state.x1;
         _state.x1 = input;
         _state.y2 = _state.y1;
@@ -224,7 +224,7 @@ public:
     T filterWeighted(const T& input) {
         const T output = filter(input);
         // weight of 1.0 gives just output, weight of 0.0 gives just input
-        return _weight*(output - input) + input;
+        return (output - input)*_weight + input;
     }
 
     void initLowPass(float frequencyHz, float loopTimeSeconds, float Q) {
@@ -313,8 +313,15 @@ inline void BiquadFilterT<T>::setNotchFrequencyWeighted(float frequencyHz, float
     _weight = weight;
 
     const float omega = frequencyHz*_2PiLoopTimeSeconds;
+#if defined(LIBRARY_FILTERS_USE_SINCOS)
+    float sinOmega {};
+    float cosOmega {};
+    sincosf(omega, &sinOmega, &cosOmega);
+    const float alpha = sinOmega*_2Q_reciprocal;
+#else
     const float cosOmega = cosf(omega);
     const float alpha = sinf(omega)*_2Q_reciprocal;
+#endif
     const float a0reciprocal = 1.0F/(1.0F + alpha);
 
     _b0 = a0reciprocal;
@@ -366,16 +373,16 @@ protected:
 template <typename T, size_t N>
 inline T FilterMovingAverageT<T, N>::filter(const T& input)
 {
-    _sum += input;
+    _sum = _sum + input;
     if (_count < N) {
         _samples[_index++] = input;
         ++_count;
-        return _sum/static_cast<float>(_count);
+        return _sum*(1.0F/static_cast<float>(_count));
     }
     if (_index == N) {
         _index = 0;
     }
-    _sum -= _samples[_index];
+    _sum = _sum - _samples[_index];
     _samples[_index++] = input;
 
     constexpr float nReciprocal = 1.0F/N;
