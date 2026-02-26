@@ -14,7 +14,7 @@ class RollingBuffer {
 public:
     RollingBuffer() : _begin(0), _end(0), _size(0) {}
 private:
-    enum { CAPACITY = C };
+    static constexpr size_t CAPACITY = C;
 public:
     size_t size() const { return _size; }
     bool is_empty() const { return _size == 0; }
@@ -94,7 +94,7 @@ class RollingBufferWithSum {
 public:
     RollingBufferWithSum() : _begin(0), _end(0), _size(0) {}
 private:
-    enum { CAPACITY = C };
+    static constexpr size_t CAPACITY = C;
 public:
     size_t size() const { return _size; }
     void push_back(const T& value);

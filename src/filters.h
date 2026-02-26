@@ -218,17 +218,17 @@ public:
         return (output - input)*_weight + input;
     }
 
-    void init_lowpass(float frequency_hz, float looptime_seconds, float Q) {
-        assert(Q != 0.0F && "Q cannot be zero");
+    void init_lowpass(float frequency_hz, float looptime_seconds, float q) {
+        assert(q != 0.0F && "q cannot be zero");
         set_looptime(looptime_seconds);
-        setQ(Q);
+        set_q(q);
         set_low_pass_frequency(frequency_hz);
         reset();
     }
-    void init_notch(float frequency_hz, float looptime_seconds, float Q) {
-        assert(Q != 0.0F && "Q cannot be zero");
+    void init_notch(float frequency_hz, float looptime_seconds, float q) {
+        assert(q != 0.0F && "q cannot be zero");
         set_looptime(looptime_seconds);
-        setQ(Q);
+        set_q(q);
         set_notch_frequency(frequency_hz);
         reset();
     }
@@ -238,23 +238,23 @@ public:
     void set_low_pass_frequencyWeighted(float frequency_hz, float weight);
     void set_low_pass_frequency(float frequency_hz) { set_low_pass_frequencyWeighted(frequency_hz, 1.0F); }
 
-    void set_notch_frequency_weighted(float frequency_hz, float weight); // assumes Q already set
-    void set_notch_frequency(float frequency_hz) {set_notch_frequency_weighted(frequency_hz, 1.0F); } // assumes Q already set
+    void set_notch_frequency_weighted(float frequency_hz, float weight); // assumes q already set
+    void set_notch_frequency(float frequency_hz) {set_notch_frequency_weighted(frequency_hz, 1.0F); } // assumes q already set
     void set_notch_frequency_weighted(float sin_omega, float two_cos_omega, float weight);
     void set_notch_frequency(float center_frequency_hz, float lower_cutoff_frequency_hz) {
-        setQ(calculateQ(center_frequency_hz, lower_cutoff_frequency_hz));
+        set_q(calculate_q(center_frequency_hz, lower_cutoff_frequency_hz));
         set_notch_frequency(center_frequency_hz);
     }
     void set_notch_frequency(uint16_t center_frequency_hz, uint16_t lower_cutoff_frequency_hz) {
         set_notch_frequency(static_cast<float>(center_frequency_hz), static_cast<float>(lower_cutoff_frequency_hz));
     }
 
-    static float calculateQ(float center_frequency_hz, float lower_cutoff_frequency_hz) {
+    static float calculate_q(float center_frequency_hz, float lower_cutoff_frequency_hz) {
         return center_frequency_hz*lower_cutoff_frequency_hz/(center_frequency_hz*center_frequency_hz - lower_cutoff_frequency_hz*lower_cutoff_frequency_hz);
     }
-    void setQ(float centerFrequency, float lower_cutoff_frequency) { _2q_reciprocal = 1.0F/(2.0F*calculateQ(centerFrequency, lower_cutoff_frequency)); }
-    void setQ(float Q) { _2q_reciprocal = 1.0F /(2.0F*Q); }
-    float getQ() const { return (1.0F/_2q_reciprocal)/2.0F; }
+    void set_q(float centerFrequency, float lower_cutoff_frequency) { _2q_reciprocal = 1.0F/(2.0F*calculate_q(centerFrequency, lower_cutoff_frequency)); }
+    void set_q(float q) { _2q_reciprocal = 1.0F /(2.0F*q); }
+    float get_q() const { return (1.0F/_2q_reciprocal)/2.0F; }
 
     void set_looptime(float looptime_seconds) { _2_pi_looptime_seconds = 2.0F*PI_F*looptime_seconds; }
 // for testing
@@ -269,7 +269,7 @@ protected:
 
     state_t _state {};
 
-    float _2q_reciprocal {1.0F}; // store 1/(2*Q), since that is what is used in set_notch_frequency calculations
+    float _2q_reciprocal {1.0F}; // store 1/(2*q), since that is what is used in set_notch_frequency calculations
     float _2_pi_looptime_seconds {0.0F}; // store 2*PI*looptime_seconds, since that is what is used in calculations
 protected:
     static constexpr float PI_F = 3.14159265358979323846F;
@@ -285,19 +285,19 @@ inline void BiquadFilter::set_low_pass_frequencyWeighted(float frequency_hz, flo
     const float omega = frequency_hz*_2_pi_looptime_seconds;
 #if defined(LIBRARY_FILTER_USE_SINCOS)
     float sin_omega {};
-    float cosOmega {};
-    sincosf(omega, &sin_omega, &cosOmega);
+    float cos_omega {};
+    sincosf(omega, &sin_omega, &cos_omega);
     const float alpha = sin_omega*_2q_reciprocal;
 #else
-    const float cosOmega = cosf(omega);
+    const float cos_omega = cosf(omega);
     const float alpha = sinf(omega)*_2q_reciprocal;
 #endif
     const float a0_reciprocal = 1.0F/(1.0F + alpha);
 
-    _b1 = (1.0F - cosOmega)*a0_reciprocal;
+    _b1 = (1.0F - cos_omega)*a0_reciprocal;
     _b0 = _b1*0.5F;
     _b2 = _b0;
-    _a1 = -2.0F*cosOmega*a0_reciprocal;
+    _a1 = -2.0F*cos_omega*a0_reciprocal;
     _a2 = (1.0F - alpha)*a0_reciprocal;
 }
 
@@ -382,6 +382,6 @@ inline float FilterMovingAverage<N>::filter(float input)
     _sum = _sum - _samples[_index];
     _samples[_index] = input;
     ++_index;
-    constexpr float n_reciprocal = 1.0F/static_cast<float>(N);
-    return _sum*n_reciprocal;
+    static constexpr float N_RECIPROCAL = 1.0F/static_cast<float>(N);
+    return _sum*N_RECIPROCAL;
 }
